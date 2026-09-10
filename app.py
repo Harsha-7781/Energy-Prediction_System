@@ -23,7 +23,7 @@ MODEL_PATH = Path("models/energy_model_latest.joblib")
 
 HIGH_DEMAND_HOURS = range(8, 17)  # from reports/shap_explainability.md, floors 2-7
 
-st.set_page_config(page_title="Smart Building Energy Forecast", layout="wide")
+st.set_page_config(page_title="Smart Building Energy Forecast", page_icon="⚡", layout="wide")
 
 
 @st.cache_resource
@@ -56,7 +56,7 @@ def feature_contribution_chart(row: pd.Series, shap_row: np.ndarray, feature_col
         text=[f"{v:+.2f}" for v in contrib.values], textposition="outside",
     ))
     fig.update_layout(
-        title=f"Why this prediction? (base rate {base_value:.1f} kW -> feature effects, right = increases prediction)",
+        title=f"🧠 Why this prediction? (base rate {base_value:.1f} kW → feature effects, right = increases prediction)",
         xaxis_title="SHAP contribution (kW)", height=420,
         margin=dict(l=10, r=10, t=50, b=10),
     )
@@ -64,66 +64,74 @@ def feature_contribution_chart(row: pd.Series, shap_row: np.ndarray, feature_col
 
 
 def build_suggestions(floor_id: int, hour: int, top_features: pd.Series, has_sensor_data: int) -> list:
+    """Returns a list of (icon, kind, text) tuples. `kind` maps to a
+    Streamlit container (info/success/warning) for visual grouping."""
     suggestions = []
     if floor_id == 1:
-        suggestions.append(
+        suggestions.append((
+            "🌙", "warning",
             "**Floor 1 does not follow the standard office-hours pattern** seen on "
             "every other floor -- its load peaks in the evening rather than midday, "
             "and its weekday/weekend consumption is nearly identical. Standard "
             "'reduce daytime AC load' advice is unlikely to apply here; the "
             "recommended next step is investigating what specifically runs on "
             "this floor in the evening (see `reports/shap_explainability.md`)."
-        )
+        ))
     else:
         if hour in HIGH_DEMAND_HOURS:
-            suggestions.append(
+            suggestions.append((
+                "🔥", "success",
                 f"This hour ({hour}:00) falls inside this floor group's "
                 f"identified high-demand window ({HIGH_DEMAND_HOURS.start}:00-"
                 f"{HIGH_DEMAND_HOURS.stop - 1}:00). This is where load-shifting "
                 "flexible equipment or pre-cooling ahead of the window has the "
                 "largest modeled impact."
-            )
+            ))
         else:
-            suggestions.append(
+            suggestions.append((
+                "💤", "info",
                 f"This hour ({hour}:00) is outside the identified high-demand "
                 "window for this floor group -- consumption here is already "
                 "close to baseline, so there is limited additional savings "
                 "opportunity at this specific time."
-            )
+            ))
 
     top_feat = top_features.index[0]
     if top_feat in ("lag_1h", "lag_24h", "lag_168h"):
-        suggestions.append(
+        suggestions.append((
+            "🔁", "info",
             f"The single largest driver of this specific prediction is **{top_feat}** "
             "(recent/historical load at this same slot) -- this prediction is "
             "mostly a continuation of this floor's own recent pattern rather "
             "than an unusual event."
-        )
+        ))
     elif top_feat == "temperature" and has_sensor_data:
-        suggestions.append(
+        suggestions.append((
+            "🌡️", "warning",
             "Temperature is the top driver for this prediction, but remember "
             "this dataset's sensor measures **indoor** room temperature, which "
             "tends to read *lower* while AC is running hardest -- don't read "
             "this as a simple 'raise the setpoint' signal without outdoor "
             "weather data to confirm the direction (see `reports/shap_explainability.md`)."
-        )
+        ))
 
     if not has_sensor_data:
-        suggestions.append(
+        suggestions.append((
+            "📡", "info",
             "This floor has no working temperature/humidity/light sensors in "
             "the source data (`has_sensor_data=0`) -- its environmental "
             "features are filled with a fallback value, not a real reading."
-        )
+        ))
     return suggestions
 
 
 def main():
-    st.title("Smart Building Energy Forecast")
+    st.title("⚡ Smart Building Energy Forecast")
     st.caption(
-        "CU-BEMS hourly per-floor energy forecasting, RandomForest + SHAP. "
+        "🏢 CU-BEMS hourly per-floor energy forecasting, 🌲 RandomForest + 🧠 SHAP. "
         "Select a floor and date range to see the forecast, why the model "
         "predicts what it does for a specific hour, and what that implies "
-        "for energy savings."
+        "for energy savings. 💡"
     )
 
     bundle, explainer = load_model()
@@ -134,21 +142,29 @@ def main():
     min_date, max_date = df.timestamp.min().date(), df.timestamp.max().date()
 
     with st.sidebar:
-        st.header("Selection")
-        floor = st.selectbox("Floor", floors, index=1, format_func=lambda f: f"Floor {f}")
+        st.header("🎛️ Selection")
+        floor = st.selectbox(
+            "🏢 Floor", floors, index=1,
+            format_func=lambda f: f"Floor {f}" + (" ⚠️ atypical" if f == 1 else ""),
+        )
         default_start = pd.Timestamp("2019-06-01").date()
         default_end = pd.Timestamp("2019-06-08").date()
         date_range = st.date_input(
-            "Date range", value=(default_start, default_end),
+            "📅 Date range", value=(default_start, default_end),
             min_value=min_date, max_value=max_date,
         )
         st.caption(
-            f"Data available: {min_date} to {max_date}. "
+            f"🗓️ Data available: {min_date} to {max_date}. "
             "2018 = training period, 2019 = held-out test period."
         )
+        if floor == 1:
+            st.info("⚠️ Floor 1 runs an unusual, evening-peaked load pattern -- see the notes below once you pick a prediction to explain.")
+
+        st.divider()
+        st.caption("🎓 Built for a CU-BEMS smart-buildings coursework project.")
 
     if not isinstance(date_range, tuple) or len(date_range) != 2:
-        st.warning("Select a start and end date.")
+        st.warning("👉 Select a start and end date.")
         st.stop()
     start_date, end_date = date_range
 
@@ -161,16 +177,16 @@ def main():
 
     if sub.empty:
         st.warning(
-            "No data for this floor/date range. "
+            "🚫 No data for this floor/date range. "
             + ("Floor 6's 2019 data ends 2019-10-22 -- try an earlier range." if floor == 6 else "")
         )
         st.stop()
 
-    st.subheader(f"Forecast: Floor {floor}, {start_date} to {end_date}")
+    st.subheader(f"📈 Forecast: Floor {floor}, {start_date} → {end_date}")
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.energy, name="Actual", line=dict(color="#1f77b4")))
-    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.predicted, name="Predicted", line=dict(color="#ff7f0e", dash="dot")))
+    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.energy, name="🔵 Actual", line=dict(color="#1f77b4")))
+    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.predicted, name="🟠 Predicted", line=dict(color="#ff7f0e", dash="dot")))
     fig.update_layout(
         xaxis_title="Timestamp", yaxis_title="Energy (kW)",
         height=380, margin=dict(l=10, r=10, t=30, b=10),
@@ -180,16 +196,16 @@ def main():
 
     metrics = compute_metrics(sub["energy"], sub["predicted"])
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("MAE", f"{metrics['MAE']:.2f} kW")
-    c2.metric("RMSE", f"{metrics['RMSE']:.2f} kW")
-    c3.metric("WAPE", f"{metrics['WAPE_%']:.1f}%")
-    c4.metric("R2", f"{metrics['R2']:.3f}" if not np.isnan(metrics["R2"]) else "n/a")
+    c1.metric("🎯 MAE", f"{metrics['MAE']:.2f} kW")
+    c2.metric("📉 RMSE", f"{metrics['RMSE']:.2f} kW")
+    c3.metric("📊 WAPE", f"{metrics['WAPE_%']:.1f}%")
+    c4.metric("✅ R²", f"{metrics['R2']:.3f}" if not np.isnan(metrics["R2"]) else "n/a")
 
     st.divider()
-    st.subheader("Explain a specific prediction")
+    st.subheader("🔍 Explain a specific prediction")
 
     idx = st.select_slider(
-        "Hour to explain",
+        "🕐 Hour to explain",
         options=list(range(len(sub))),
         value=int(sub["predicted"].idxmax()),
         format_func=lambda i: sub.loc[i, "timestamp"].strftime("%Y-%m-%d %H:%M"),
@@ -207,27 +223,29 @@ def main():
             use_container_width=True,
         )
     with col_b:
-        st.metric("Actual energy", f"{row['energy']:.1f} kW")
-        st.metric("Predicted energy", f"{row['predicted']:.1f} kW")
-        st.caption(f"Model base rate (average prediction): {base_value:.1f} kW")
+        st.metric("🔌 Actual energy", f"{row['energy']:.1f} kW")
+        delta = row["predicted"] - row["energy"]
+        st.metric("🔮 Predicted energy", f"{row['predicted']:.1f} kW", delta=f"{delta:+.1f} kW vs actual", delta_color="off")
+        st.caption(f"⚖️ Model base rate (average prediction): {base_value:.1f} kW")
 
-        st.markdown("**Optimization suggestions**")
+        st.markdown("**💡 Optimization suggestions**")
         top_features = pd.Series(shap_row, index=feature_cols).abs().sort_values(ascending=False)
-        for s in build_suggestions(int(floor), int(row["hour"]), top_features, int(row["has_sensor_data"])):
-            st.markdown(f"- {s}")
+        container_fn = {"info": st.info, "success": st.success, "warning": st.warning}
+        for icon, kind, text in build_suggestions(int(floor), int(row["hour"]), top_features, int(row["has_sensor_data"])):
+            container_fn[kind](f"{icon} {text}")
 
-    with st.expander("Model performance and background (full 2019 test set)"):
+    with st.expander("📚 Model performance and background (full 2019 test set)"):
         st.markdown(
-            "- Overall test-set MAE 4.76 kW, RMSE 9.81 kW, R2 0.949, WAPE 15.4% "
+            "- 🎯 Overall test-set MAE 4.76 kW, RMSE 9.81 kW, R2 0.949, WAPE 15.4% "
             "(`reports/model_evaluation.md`).\n"
-            "- Floors 2-7 are strongly occupancy-driven (weekday load 3.75x-9.85x "
+            "- 🏢 Floors 2-7 are strongly occupancy-driven (weekday load 3.75x-9.85x "
             "weekend); Floor 1 runs a fundamentally different, evening-peaked "
             "load with almost no weekday/weekend difference "
             "(`reports/consumption_trends.md`, `reports/shap_explainability.md`).\n"
-            "- `lag_168h` (same hour, one week ago) and `lag_1h` dominate the "
+            "- 🔁 `lag_168h` (same hour, one week ago) and `lag_1h` dominate the "
             "model's predictions -- consumption is driven primarily by each "
             "floor's own repeating weekly routine.\n"
-            "- Data quality notes: 2018 training data covers July-December "
+            "- ⚠️ Data quality notes: 2018 training data covers July-December "
             "only; Floor 6's 2019 data ends October 22 "
             "(`reports/data_inspection.md`)."
         )
