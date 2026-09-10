@@ -52,8 +52,15 @@ def main():
     results = []
 
     t0 = time.time()
+    # max_depth/min_samples_leaf chosen via a small sweep against an
+    # unconstrained forest (n_estimators=300, max_depth=None,
+    # min_samples_leaf=2): the unconstrained version scored MAE 4.96/R2
+    # 0.948 but was 351MB and made exact SHAP TreeExplainer computation
+    # (step 13) and the live Streamlit app (step 15) impractically slow.
+    # This constrained config scores slightly BETTER (less overfit on
+    # ~30k training rows) at ~19MB -- a strict win, not a tradeoff.
     rf = RandomForestRegressor(
-        n_estimators=300, max_depth=None, min_samples_leaf=2,
+        n_estimators=150, max_depth=14, min_samples_leaf=10,
         n_jobs=-1, random_state=42,
     )
     rf.fit(X_train, y_train)

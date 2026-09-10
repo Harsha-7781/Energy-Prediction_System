@@ -6,12 +6,12 @@ Single model trained on all 2018 floors combined (`floor_id` as a feature), eval
 
 | model            |    MAE |   RMSE |   MAPE_% |    R2 |   train_seconds |
 |:-----------------|-------:|-------:|---------:|------:|----------------:|
-| RandomForest     |  4.957 |  9.918 |  149.584 | 0.948 |             6.8 |
-| GradientBoosting | 12.089 | 17.81  |  802.583 | 0.833 |            13.2 |
+| RandomForest     |  4.763 |  9.807 |  131.648 | 0.949 |             2.4 |
+| GradientBoosting | 12.089 | 17.81  |  802.583 | 0.833 |            14.7 |
 
 ## RandomForest vs GradientBoosting
 
-- MAE gap: 59.0% (RandomForest lower)
+- MAE gap: 60.6% (RandomForest lower)
 - RandomForest performs meaningfully better (>5% MAE improvement).
 - **Selected for downstream steps: RandomForest**
 
@@ -21,20 +21,20 @@ Single model trained on all 2018 floors combined (`floor_id` as a feature), eval
 
 |                 |   importance |
 |:----------------|-------------:|
-| lag_168h        |       0.6803 |
-| lag_1h          |       0.2571 |
-| lag_24h         |       0.0187 |
-| hour            |       0.0159 |
-| roll_mean_3h    |       0.0133 |
-| roll_mean_24h   |       0.0048 |
-| floor_id        |       0.0028 |
-| day_of_week     |       0.0019 |
-| temperature     |       0.0017 |
-| lux             |       0.0013 |
-| month           |       0.0011 |
-| humidity        |       0.0006 |
-| is_weekend      |       0.0005 |
-| has_sensor_data |       0.0001 |
+| lag_168h        |       0.6903 |
+| lag_1h          |       0.258  |
+| lag_24h         |       0.0166 |
+| hour            |       0.0146 |
+| roll_mean_3h    |       0.0114 |
+| roll_mean_24h   |       0.0026 |
+| floor_id        |       0.0024 |
+| day_of_week     |       0.0012 |
+| temperature     |       0.0011 |
+| lux             |       0.0008 |
+| month           |       0.0004 |
+| is_weekend      |       0.0003 |
+| humidity        |       0.0003 |
+| has_sensor_data |       0      |
 
 ### GradientBoosting
 
