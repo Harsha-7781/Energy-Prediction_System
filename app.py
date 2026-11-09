@@ -19,7 +19,12 @@ import streamlit as st
 from src.eval_utils import compute_metrics
 
 DATA_PATH = Path("data/processed/features_hourly.csv")
+if not DATA_PATH.exists() and Path("Data/processed/features_hourly.csv").exists():
+    DATA_PATH = Path("Data/processed/features_hourly.csv")
+
 MODEL_PATH = Path("models/energy_model_latest.joblib")
+if not MODEL_PATH.exists() and Path("Models/energy_model_latest.joblib").exists():
+    MODEL_PATH = Path("Models/energy_model_latest.joblib")
 
 HIGH_DEMAND_HOURS = range(8, 17)  # from reports/shap_explainability.md, floors 2-7
 
@@ -161,6 +166,26 @@ def main():
             st.info("⚠️ Floor 1 runs an unusual, evening-peaked load pattern -- see the notes below once you pick a prediction to explain.")
 
         st.divider()
+        st.subheader("🎛️ Building Parameters (What-If)")
+        st.caption("Adjust parameters to simulate operational changes without altering historical data.")
+        temp_offset = st.slider(
+            "🌡️ Temperature offset (Δ°C)",
+            min_value=-3.0, max_value=3.0, value=0.0, step=0.5,
+            help="Simulates HVAC setpoint adjustment or warmer/cooler indoor conditions (floors 2-7).",
+        )
+        load_scale_pct = st.slider(
+            "⚡ Equipment / baseline load scaling (%)",
+            min_value=-30, max_value=30, value=0, step=5,
+            help="Simulates plug-load curtailment, equipment efficiency retrofits, or pre-cooling shifts.",
+        )
+        schedule_mode = st.selectbox(
+            "📅 Operational schedule mode",
+            options=["Normal (Recorded)", "Force Weekend / Low-Occupancy Mode", "Force Weekday Active Mode"],
+            index=0,
+            help="Simulates switching building operations to weekend/holiday low-occupancy or weekday high-occupancy rules.",
+        )
+
+        st.divider()
         st.caption("🎓 Built for a CU-BEMS smart-buildings coursework project.")
 
     if not isinstance(date_range, tuple) or len(date_range) != 2:
@@ -182,11 +207,34 @@ def main():
         )
         st.stop()
 
+    is_scenario_active = (temp_offset != 0.0) or (load_scale_pct != 0) or (schedule_mode != "Normal (Recorded)")
+    sub_sim = None
+    if is_scenario_active:
+        sub_sim = sub.copy()
+        if temp_offset != 0.0:
+            sub_sim["temperature"] = sub_sim["temperature"] + temp_offset
+        if load_scale_pct != 0:
+            multiplier = 1.0 + (load_scale_pct / 100.0)
+            for col in ["lag_1h", "lag_24h", "lag_168h", "roll_mean_3h", "roll_mean_24h"]:
+                sub_sim[col] = sub_sim[col] * multiplier
+        if schedule_mode == "Force Weekend / Low-Occupancy Mode":
+            sub_sim["is_weekend"] = 1
+        elif schedule_mode == "Force Weekday Active Mode":
+            sub_sim["is_weekend"] = 0
+
+        sub["scenario_predicted"] = model.predict(sub_sim[feature_cols])
+
     st.subheader(f"📈 Forecast: Floor {floor}, {start_date} → {end_date}")
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.energy, name="🔵 Actual", line=dict(color="#1f77b4")))
-    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.predicted, name="🟠 Predicted", line=dict(color="#ff7f0e", dash="dot")))
+    fig.add_trace(go.Scatter(x=sub.timestamp, y=sub.predicted, name="🟠 Predicted (Base)", line=dict(color="#ff7f0e", dash="dot")))
+    if is_scenario_active:
+        fig.add_trace(go.Scatter(
+            x=sub.timestamp, y=sub["scenario_predicted"],
+            name="🟢 What-If Scenario",
+            line=dict(color="#2ca02c", dash="dash")
+        ))
     fig.update_layout(
         xaxis_title="Timestamp", yaxis_title="Energy (kW)",
         height=380, margin=dict(l=10, r=10, t=30, b=10),
@@ -194,12 +242,23 @@ def main():
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    if is_scenario_active:
+        base_kwh = float(sub["predicted"].sum())
+        sim_kwh = float(sub["scenario_predicted"].sum())
+        delta_kwh = sim_kwh - base_kwh
+        pct_delta = (delta_kwh / base_kwh) * 100 if base_kwh > 0 else 0.0
+        st.success(
+            f"🧪 **What-If Scenario Active:** Base forecast sum = **{base_kwh:,.1f} kWh** | "
+            f"Scenario forecast sum = **{sim_kwh:,.1f} kWh** "
+            f"({delta_kwh:+,.1f} kWh, **{pct_delta:+.1f}%** change across selected range)."
+        )
+
     metrics = compute_metrics(sub["energy"], sub["predicted"])
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("🎯 MAE", f"{metrics['MAE']:.2f} kW")
-    c2.metric("📉 RMSE", f"{metrics['RMSE']:.2f} kW")
-    c3.metric("📊 WAPE", f"{metrics['WAPE_%']:.1f}%")
-    c4.metric("✅ R²", f"{metrics['R2']:.3f}" if not np.isnan(metrics["R2"]) else "n/a")
+    c1.metric("🎯 MAE (Historical)", f"{metrics['MAE']:.2f} kW")
+    c2.metric("📉 RMSE (Historical)", f"{metrics['RMSE']:.2f} kW")
+    c3.metric("📊 WAPE (Historical)", f"{metrics['WAPE_%']:.1f}%")
+    c4.metric("✅ R² (Historical)", f"{metrics['R2']:.3f}" if not np.isnan(metrics["R2"]) else "n/a")
 
     st.divider()
     st.subheader("🔍 Explain a specific prediction")
@@ -225,7 +284,16 @@ def main():
     with col_b:
         st.metric("🔌 Actual energy", f"{row['energy']:.1f} kW")
         delta = row["predicted"] - row["energy"]
-        st.metric("🔮 Predicted energy", f"{row['predicted']:.1f} kW", delta=f"{delta:+.1f} kW vs actual", delta_color="off")
+        st.metric("🔮 Predicted energy (Base)", f"{row['predicted']:.1f} kW", delta=f"{delta:+.1f} kW vs actual", delta_color="off")
+        if is_scenario_active:
+            row_sim_pred = float(sub.loc[idx, "scenario_predicted"])
+            sim_diff = row_sim_pred - row["predicted"]
+            st.metric(
+                "🟢 Scenario predicted",
+                f"{row_sim_pred:.1f} kW",
+                delta=f"{sim_diff:+.1f} kW vs base forecast",
+                delta_color="inverse",
+            )
         st.caption(f"⚖️ Model base rate (average prediction): {base_value:.1f} kW")
 
         st.markdown("**💡 Optimization suggestions**")

@@ -6,9 +6,17 @@ __pycache__/
 # Raw and intermediate data are large — regenerate via src/ scripts, don't commit
 data/raw/
 data/interim/
+Data/raw/
+Data/interim/
 data/processed/*.csv
+Data/processed/*.csv
+
+# Keep processed features and trained model for Streamlit deployment
+!data/processed/features_hourly.csv
+!Data/processed/features_hourly.csv
 
 # Trained models are large binaries — regenerate via src/train.py
 models/*.joblib
+!models/energy_model_latest.joblib
 
 .streamlit/secrets.toml
