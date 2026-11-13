@@ -1,5 +1,5 @@
 """
-Step 9 - Model training.
+Model training and benchmark comparison (RandomForest vs GradientBoosting).
 
 Trains a single RandomForestRegressor on all 2018 data (all floors,
 floor_id as a plain integer feature -- see src/features.py for why),

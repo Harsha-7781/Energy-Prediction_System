@@ -1,9 +1,9 @@
 """
-Step 15 - Streamlit UI.
+Smart Building Energy Forecasting & Optimization Dashboard.
 
-Lets a user pick a floor and date range and see: the forecast (actual vs
-predicted), the SHAP explanation for a specific prediction in that
-range, and plain-language, SHAP-backed optimization suggestions.
+Interactive web application for CU-BEMS hourly per-floor energy forecasting,
+RandomForest model predictions, real-time evaluation metrics, and SHAP-based
+explainable AI (XAI) with plain-language energy optimization suggestions.
 
 Run with: streamlit run app.py
 """

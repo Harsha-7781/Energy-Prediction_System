@@ -1,5 +1,5 @@
 """
-Step 3 - Combine.
+Resample raw minute-level per-floor CSVs to hourly and combine into a unified dataset.
 
 Resamples each floor's raw minute-level CSV to hourly BEFORE merging
 (per the confirmed data strategy), then concatenates all 7 floors x 2

@@ -1,5 +1,5 @@
 """
-Step 6 - Seasonal trend analysis.
+STL seasonal decomposition for daily and weekly building energy cycles.
 
 Decomposes the cleaned hourly energy series into trend / seasonal /
 residual components using STL, at two resolutions that match the two

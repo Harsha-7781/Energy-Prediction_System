@@ -1,5 +1,5 @@
 """
-Step 10 - Validate forecast stability.
+Forecast stability validation across building floors and months.
 
 Checks whether the winning model's 2019 test performance is consistent
 across individual floors and across months, rather than reporting one

@@ -1,7 +1,7 @@
 """
-Shared metric helpers for steps 10/11 so both reports compute error
-figures the exact same way (no drift between "validate stability" and
-"evaluate forecast errors").
+Shared evaluation metric utilities (MAE, RMSE, WAPE, MAPE, R2).
+
+Ensures all evaluation modules compute error figures consistently.
 """
 import numpy as np
 import pandas as pd

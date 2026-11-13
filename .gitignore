@@ -20,3 +20,5 @@ models/*.joblib
 !models/energy_model_latest.joblib
 
 .streamlit/secrets.toml
+reports/.mpl_cache/
+CLAUDE.md

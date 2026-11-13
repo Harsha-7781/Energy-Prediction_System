@@ -1,5 +1,5 @@
 """
-Step 4 - EDA.
+Exploratory data analysis of building energy consumption patterns.
 
 Analyzes hourly consumption patterns (daily / weekly / seasonal) from
 data/processed/combined_hourly.csv, per floor and combined, and saves

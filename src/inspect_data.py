@@ -1,5 +1,5 @@
 """
-Step 2 - Data ingestion / inspection.
+Ingestion inspection for raw multi-floor CU-BEMS telemetry files.
 
 Loads each of the 14 raw CU-BEMS CSVs individually and reports schema,
 shape, date range, sampling frequency, missing-data patterns, and

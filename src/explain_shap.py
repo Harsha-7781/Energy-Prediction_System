@@ -1,5 +1,5 @@
 """
-Step 13 - Explainability (SHAP).
+Model interpretability using SHAP TreeExplainer and recommendation synthesis.
 
 Applies SHAP to the trained model (models/interim_winner.joblib) on a
 stratified sample of the 2019 test set, produces global feature

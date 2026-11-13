@@ -1,5 +1,5 @@
 """
-Step 7 - Feature engineering.
+Feature engineering pipeline: cyclical time, lags, rolling statistics, and sensors.
 
 Builds the model-ready feature table from data/processed/cleaned_hourly.csv:
 time-based features (hour, day-of-week, month, is_weekend), lag features,

@@ -1,5 +1,5 @@
 """
-Step 12 - Interpret consumption trends.
+Synthesize plain-language, model-backed consumption trend insights.
 
 Synthesizes a plain-language, model-backed summary of what drives energy
 consumption in this building, using: the trained model's global feature

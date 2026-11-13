@@ -1,5 +1,5 @@
 """
-Step 11 - Evaluate forecast errors.
+Evaluate forecast error metrics (MAE, RMSE, WAPE, R2) on held-out test predictions.
 
 Reports MAE, RMSE, MAPE (as specified), overall and per floor, for the
 winning model's 2019 predictions (data/processed/test_predictions.csv).

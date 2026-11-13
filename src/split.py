@@ -1,8 +1,7 @@
 """
-Step 8 - Train/test split.
+Chronological train/test split (2018 training / 2019 validation).
 
-Chronological split by year, per the confirmed data strategy: train on
-all 2018 rows, test on all 2019 rows. Not a random split -- this is
+Chronological split by year: train on all 2018 rows, test on all 2019 rows.
 intentional (full-year-ahead generalization test), so keep it this way
 even where step 10/11 metrics look worse than a random split would give.
 

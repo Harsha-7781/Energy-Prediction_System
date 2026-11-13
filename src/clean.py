@@ -1,5 +1,5 @@
 """
-Step 5 - Data cleaning.
+Data cleaning and outlier preprocessing for hourly CU-BEMS energy records.
 
 Handles missing values and abnormal readings in data/processed/combined_hourly.csv,
 producing data/processed/cleaned_hourly.csv. Logic is justified by what

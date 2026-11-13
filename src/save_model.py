@@ -1,5 +1,5 @@
 """
-Step 14 - Save the model.
+Retrain and serialize production model bundle.
 
 Retrains the winning model (per reports/model_training.md) on all 2018
 data with the exact hyperparameters from src/train.py, and saves it with
